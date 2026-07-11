@@ -6,6 +6,7 @@
 #include <iostream>
 #include <limits>
 #include <vector>
+#include <print>
 
 import math;
 import types;
@@ -35,7 +36,7 @@ public:
 
     auto save_ppm(std::fstream& file) -> void {
         file << "P3\n" << width << ' ' << height << '\n' << 255 << '\n';
-        auto size = pixels.size();
+        usize size = pixels.size();
         for (usize i{}; i < size; i += 3) {
             u8 r = pixels[i];
             u8 g = pixels[i + 1];
@@ -53,7 +54,7 @@ public:
 auto edge_function(Vec3<f32> const& a, Vec3<f32> const& b, Vec3<f32> const& p) -> f32 {
     auto ba = Vec2<f32>(b.x - a.x, b.y - a.y);
     auto pa = Vec2<f32>(p.x - a.x, p.y - a.y);
-    return ba.perp_dot(pa);
+    return pa.perp_dot(ba);
 }
 
 auto draw_triangle(
@@ -61,7 +62,8 @@ auto draw_triangle(
     Vec3<f32> const& a,
     Vec3<f32> const& b,
     Vec3<f32> const& c,
-    u8 r, u8 g, u8 b_col
+    u8 r, u8 g, u8 b_col,
+    f32 brightness
 ) -> void {
 
     // bounding box co-ords
@@ -77,6 +79,7 @@ auto draw_triangle(
         0.f
     );
 
+    // Clamp to min and max vals to stay within valid interval
     usize min_x = static_cast<usize>(
         std::clamp(std::floor(bb_min.x), 0.f, static_cast<f32>(fb.width) - 1.f)
     );
@@ -91,6 +94,7 @@ auto draw_triangle(
         std::clamp(std::ceil(bb_max.y), 0.f, static_cast<f32>(fb.height) - 1.f)
     );
 
+    // Iter through every pixel in the triangle
     for (usize i{min_x}; i < max_x; ++i) {
         for (usize j{min_y}; j < max_y; ++j) {
             auto p = Vec3<f32>(i, j);
@@ -99,30 +103,39 @@ auto draw_triangle(
             f32 w1 = edge_function(b, c, p);
             f32 w2 = edge_function(c, a, p);
 
+            // If each of the w vals are greater than or equal to 0, they exist on the edge or inside.
             if (w0 >= 0.f && w1 >= 0.f && w2 >= 0.f) {
                 f32 total = w0 + w1 + w2;
 
+                // Barycentric co-ords
                 f32 alpha = w1 / total;
                 f32 beta  = w2 / total;
                 f32 gamma = w0 / total;
 
+                // Distant pixels have greater depth.
+                // greater -ve values imply more distance from the camera.
                 f32 depth = alpha * a.z + beta * b.z + gamma * c.z;
 
-                fb.set_pixel(i, j, r, g, b_col, depth);
+                u8 ir = static_cast<u8>(r * brightness);
+                u8 ig = static_cast<u8>(g * brightness);
+                u8 ib = static_cast<u8>(b_col * brightness);
+
+                fb.set_pixel(i, j, ir, ig, ib, depth);
             }
         }
     }
 }
 
 auto project(Vec3<f32> v, usize width, usize height) -> Vec3<f32> {
-    f32 w = -v.z;
-    f32 ndc_x = v.x / w;
-    f32 ndc_y = v.y / w;
+    // Project world space co-ordinates into 2D projected co-ordinates
+    f32 z = -v.z;
+    f32 ndc_x = v.x / z;
+    f32 ndc_y = v.y / z;
 
     auto pixel_scale = Vec3<f32>(
        ((ndc_x + 1) * 0.5) * (width - 1),
-       ((1 - ndc_y) * 0.5) * (height - 1),
-       w
+       ((1 - ndc_y) * 0.5) * (height - 1), // since the y axis is flipped we use this
+       v.z
     );
 
     return pixel_scale;
@@ -130,7 +143,7 @@ auto project(Vec3<f32> v, usize width, usize height) -> Vec3<f32> {
 
 auto main(i32 argc, char* argv[]) -> i32 {
     if (argc < 2) {
-        std::cerr << "[ERR] File where bish\n";
+        std::cerr << "[ERR] File path where bish?\n";
         return EXIT_FAILURE;
     }
     constexpr usize WIDTH = 800;
@@ -144,11 +157,30 @@ auto main(i32 argc, char* argv[]) -> i32 {
         return EXIT_FAILURE;
     }
 
-    auto a = project(Vec3<f32>(-0.5, 0.5, -1.0), WIDTH, HEIGHT);
-    auto b = project(Vec3<f32>(0.5, 0.5, -2.0), WIDTH, HEIGHT);
-    auto c = project(Vec3<f32>(0.0, -0.5, -1.5), WIDTH, HEIGHT);
-    draw_triangle(framebuffer, a, b, c, 255, 0, 0);
+    // Light direction
+    Vec3<f32> light_dir = Vec3<f32>(0.f, 0.f, 1.f).normalized();
+
+    // World space-coordinates
+    auto ws_a = Vec3<f32>(-0.5f, 0.5f, -1.f);
+    auto ws_b = Vec3<f32>(0.0, -0.5, -1.5);
+    auto ws_c = Vec3<f32>(0.5, 0.5, -2.0);
+
+    auto edge_ab = ws_b - ws_a;
+    auto edge_ac = ws_c - ws_a;
+
+    Vec3<f32> face_normal = edge_ab.cross(edge_ac).normalized();
+
+    f32 brightness = std::max(0.f, face_normal.dot(light_dir));
+
+    // Projected co-ordinates
+    auto a = project(ws_a, WIDTH, HEIGHT);
+    auto b = project(ws_b, WIDTH, HEIGHT);
+    auto c = project(ws_c, WIDTH, HEIGHT);
+
+    draw_triangle(framebuffer, a, b, c, 255, 0, 0, brightness);
+
     framebuffer.save_ppm(outfile);
     outfile.close();
+
     return EXIT_SUCCESS;
 }
