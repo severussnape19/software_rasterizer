@@ -1,0 +1,21 @@
+{
+  "revision": 0,
+  "rules": [
+    {
+      "primary-output": "CMakeFiles/app.dir/src/math.cppm.o",
+      "provides": [
+        {
+          "is-interface": true,
+          "logical-name": "math",
+          "source-path": "/home/lakshya/ws/c++/src/math.cppm"
+        }
+      ],
+      "requires": [
+        {
+          "logical-name": "types"
+        }
+      ]
+    }
+  ],
+  "version": 1
+}
