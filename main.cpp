@@ -6,7 +6,6 @@
 #include <iostream>
 #include <limits>
 #include <vector>
-#include <print>
 
 import math;
 import types;
@@ -128,13 +127,14 @@ auto draw_triangle(
 
 auto project(Vec3<f32> v, usize width, usize height) -> Vec3<f32> {
     // Project world space co-ordinates into 2D projected co-ordinates
-    f32 z = -v.z;
-    f32 ndc_x = v.x / z;
-    f32 ndc_y = v.y / z;
+    auto ndc_x = Vec4<f32>(v.x, 0.f, 0.f, 0.f);
+    auto ndc_y = Vec4<f32>(0.f, v.y, 0.f, 0.f);
+    auto ndc_z = Vec4<f32>(0.f, 0.f, 1.f, 0.f);
+    auto ndc_w = Vec4<f32>(0.f, 0.f, -1.f, 0.f);
 
     auto pixel_scale = Vec3<f32>(
-       ((ndc_x + 1) * 0.5) * (width - 1),
-       ((1 - ndc_y) * 0.5) * (height - 1), // since the y axis is flipped we use this
+       ((ndc_x.x + 1) * 0.5) * (width - 1),
+       ((1 - ndc_y.y) * 0.5) * (height - 1), // since the y axis is flipped we use this
        v.z
     );
 
@@ -161,16 +161,18 @@ auto main(i32 argc, char* argv[]) -> i32 {
     Vec3<f32> light_dir = Vec3<f32>(0.f, 0.f, 1.f).normalized();
 
     // World space-coordinates
-    auto ws_a = Vec3<f32>(-0.5f, 0.5f, -1.f);
-    auto ws_b = Vec3<f32>(0.0, -0.5, -1.5);
-    auto ws_c = Vec3<f32>(0.5, 0.5, -2.0);
+    auto ws_a = Vec4<f32>(-0.5f, 0.5f, -1.f);
+    auto ws_b = Vec4<f32>(0.0, -0.5, -1.5);
+    auto ws_c = Vec4<f32>(0.5, 0.5, -2.0);
 
     auto edge_ab = ws_b - ws_a;
     auto edge_ac = ws_c - ws_a;
 
-    Vec3<f32> face_normal = edge_ab.cross(edge_ac).normalized();
+    Vec4<f32> face_normal = edge_ab.cross(edge_ac).normalized();
 
     f32 brightness = std::max(0.f, face_normal.dot(light_dir));
+
+    auto model_matrix = Mat4<f32>(ws_a, ws_b, ws_c);
 
     // Projected co-ordinates
     auto a = project(ws_a, WIDTH, HEIGHT);
