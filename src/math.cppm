@@ -319,7 +319,7 @@ public:
         return m;
     }
 
-    [[nodiscard]] constexpr static auto rotation_x(f32 angle) -> Mat4 {
+    [[nodiscard]] constexpr static auto rotation_x(T angle) -> Mat4 {
         Mat4 m{};
         T sin_theta = std::sin(angle);
         T cos_theta = std::cos(angle);
@@ -332,7 +332,7 @@ public:
         return m;
     }
 
-    [[nodiscard]] constexpr static auto rotation_y(f32 angle) -> Mat4 {
+    [[nodiscard]] constexpr static auto rotation_y(T angle) -> Mat4 {
         Mat4 m{};
         T sin_theta = std::sin(angle);
         T cos_theta = std::cos(angle);
@@ -345,7 +345,7 @@ public:
         return m;
     }
 
-    [[nodiscard]] constexpr static auto rotation_z(f32 angle) -> Mat4 {
+    [[nodiscard]] constexpr static auto rotation_z(T angle) -> Mat4 {
         Mat4 m{};
         T sin_theta = std::sin(angle);
         T cos_theta = std::cos(angle);
@@ -394,6 +394,7 @@ public:
     std::array<T, 16> data{};
 };
 
+/*
 export template <std::floating_point T = f32>
 constexpr auto operator*(Mat4<T> const& data, Mat4<T> const& rhs) -> Mat4<T> {
     Mat4<T> m{};
@@ -408,6 +409,7 @@ constexpr auto operator*(Mat4<T> const& data, Mat4<T> const& rhs) -> Mat4<T> {
     }
     return m;
 }
+*/
 
 export template <std::floating_point T = f32>
 constexpr auto operator<<(std::ostream& os, Mat4<T> const& m) -> std::ostream& {

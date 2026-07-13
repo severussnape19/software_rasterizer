@@ -94,9 +94,9 @@ auto draw_triangle(
     );
 
     // Iter through every pixel in the triangle
-    for (usize i{min_x}; i < max_x; ++i) {
-        for (usize j{min_y}; j < max_y; ++j) {
-            auto p = Vec3<f32>(i, j);
+    for (usize col{min_x}; col < max_x; ++col) {
+        for (usize row{min_y}; row < max_y; ++row) {
+            auto p = Vec3<f32>(col, row);
 
             f32 w0 = edge_function(a, b, p);
             f32 w1 = edge_function(b, c, p);
@@ -119,7 +119,7 @@ auto draw_triangle(
                 u8 ig = static_cast<u8>(g * brightness);
                 u8 ib = static_cast<u8>(b_col * brightness);
 
-                fb.set_pixel(i, j, ir, ig, ib, depth);
+                fb.set_pixel(col, row, ir, ig, ib, depth);
             }
         }
     }
@@ -127,6 +127,7 @@ auto draw_triangle(
 
 auto to_screen( Vec4<f32> const& v, Mat4<f32> const& mvp, usize WIDTH, usize HEIGHT ) -> Vec4<f32> {
     Vec4<f32> clip = mvp * v;
+    auto const projected_z = clip.z;
     // Perspective divide
     clip /= clip.w;
 
@@ -134,7 +135,7 @@ auto to_screen( Vec4<f32> const& v, Mat4<f32> const& mvp, usize WIDTH, usize HEI
     auto pxl_space_point = Vec4<f32>(
         ((clip.x + 1.f) * 0.5f) * (static_cast<f32>(WIDTH - 1)),
         ((1.f - clip.y) * 0.5f) * (static_cast<f32>(HEIGHT - 1)),
-        v.z
+        projected_z
     );
 
     return pxl_space_point;

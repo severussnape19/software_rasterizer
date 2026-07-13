@@ -12,4 +12,5 @@ target_sources(app
     FILE_SET CXX_MODULES FILES
       src/math.cppm
       src/types.cppm
+      src/parser.cppm
 )
