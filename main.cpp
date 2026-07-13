@@ -158,32 +158,7 @@ auto main(i32 argc, char* argv[]) -> i32 {
         std::cerr << "could not open file!\n";
         return EXIT_FAILURE;
     }
-/*
-    // Worldspace-coordinates
-    // These are located with respect to the world's origin
-    auto ws_a = Vec4<f32>(-0.5f,  0.5f, -1.0f, 1.f);
-    auto ws_b = Vec4<f32>( 0.0f, -0.5f, -1.5f, 1.f);
-    auto ws_c = Vec4<f32>( 0.5f,  0.5f, -2.0f, 1.f);
 
-    auto model_matrix = Mat4<f32>::identity_matrix();
-    auto view_matrix  = Mat4<f32>::identity_matrix();
-    auto projection_matrix = Mat4<f32>::projection_matrix();
-
-    // world space to camera space
-
-    auto edge_ab = ws_b - ws_a;
-    auto edge_ac = ws_c - ws_a;
-
-    Vec4<f32> face_normal = edge_ab.cross(edge_ac).normalized();
-
-    f32 brightness = std::max(0.f, face_normal.dot(light_dir));
-
-    auto a = to_screen(ws_a, mvp, WIDTH, HEIGHT);
-    auto b = to_screen(ws_b, mvp, WIDTH, HEIGHT);
-    auto c = to_screen(ws_c, mvp, WIDTH, HEIGHT);
-
-    draw_triangle(framebuffer, a, b, c, 255, 0, 0, brightness);
-*/
     Vec3<f32> light_dir = Vec3<f32>(0.f, 0.f, 1.f).normalized();
 
     auto model_matrix = Mat4<f32>::translation_matrix(-10.f, 0.f, -75.f) * Mat4<f32>::rotation_y(0.f) * Mat4<f32>::scale(0.5f, 0.5f, 0.5f);
