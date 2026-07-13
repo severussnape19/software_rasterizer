@@ -1,0 +1,8 @@
+build/
+*.ppm
+*.o
+*.a
+*.so
+MakeFile
+cmake_install.cmake
+compile_commands.json
