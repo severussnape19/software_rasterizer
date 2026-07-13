@@ -3,6 +3,9 @@ module;
 #include <cmath>
 #include <concepts>
 #include <cassert>
+#include <iomanip>
+#include <ios>
+#include <ostream>
 
 export module math;
 
@@ -107,6 +110,11 @@ constexpr auto dot(Vec3<T> const& a, Vec3<T> const& b) noexcept -> T {
 }
 
 export template <std::floating_point T = f32>
+auto operator<<(std::ostream& os, Vec3<T> const& v) -> std::ostream& {
+    return os << "[ " << v.x << ", " << v.y << ", " << v.z << " ]";
+}
+
+export template <std::floating_point T = f32>
 struct Vec4 {
 public:
     constexpr Vec4() noexcept
@@ -115,6 +123,7 @@ public:
         , z(static_cast<T>(0))
         , w(static_cast<T>(0)) {}
 
+    // 4th co-ordinate is homogeneous. w = 1 indicates that it is a point. w = 0 indicates its a direction.
     template <typename U> requires std::convertible_to<U, T>
     constexpr Vec4(Vec3<U> const& v, T w = 0) noexcept
         : x(static_cast<T>(v.x))
@@ -128,6 +137,7 @@ public:
         , z(scalar)
         , w(scalar) {}
 
+    // 4th co-ordinate is homogeneous. w = 1 indicates that it is a point. w = 0 indicates its a direction.
     template <typename U> requires std::convertible_to<U, T>
     constexpr Vec4(U x = 0, U y = 0, U z = 0, U w = 0) noexcept
         : x(static_cast<T>(x))
@@ -135,13 +145,34 @@ public:
         , z(static_cast<T>(z))
         , w(static_cast<T>(w)) {}
 
+    constexpr auto operator*(T scalar) const noexcept -> Vec4 {
+        return Vec4(x*scalar, y*scalar, z*scalar, w*scalar);
+    }
+
+    constexpr auto operator/(T scalar) const noexcept -> Vec4 {
+        assert(scalar != static_cast<T>(0));
+        T inv_scalar = static_cast<T>(1) / scalar;
+        return Vec4(x*inv_scalar, y*inv_scalar, z*inv_scalar, w*inv_scalar);
+    }
+
+    constexpr auto operator/=(T scalar) noexcept -> Vec4& {
+        assert(scalar != static_cast<T>(0));
+        T inv_scalar = static_cast<T>(1) / scalar;
+        *this = Vec4(x*inv_scalar, y*inv_scalar, z*inv_scalar, w*inv_scalar);
+        return *this;
+    }
+
     [[nodiscard]] constexpr auto cross(Vec4<T> const& rhs) const noexcept -> Vec4 {
         return Vec4(
             y * rhs.z - z * rhs.y,
             z * rhs.x - x * rhs.z,
             x * rhs.y - y * rhs.x,
-            static_cast<T>(0)
+            static_cast<T>(0) // 4D cross doesnt exist we need it cuz homogeneous co-ords.
         );
+    }
+
+    [[nodiscard]] constexpr auto dot(Vec4<T> const& rhs) const noexcept -> T {
+        return x*rhs.x + y*rhs.y + z*rhs.z + w*rhs.w;
     }
 
     [[nodiscard]] constexpr auto length_sq() const noexcept -> T {
@@ -154,7 +185,7 @@ public:
         return std::sqrt(length_squared);
     }
 
-    [[nodiscard]] constexpr auto normalized() const noexcept -> Vec4 {
+    [[nodiscard]] constexpr auto normalized() const noexcept {
         auto len = this->length();
         assert(len != static_cast<T>(0));
 
@@ -173,6 +204,15 @@ constexpr auto operator-(Vec4<T> const& a, Vec4<T> const& b) noexcept -> Vec4<T>
 export template <std::floating_point T = f32>
 constexpr auto operator+(Vec4<T> const& a, Vec4<T> const& b) noexcept -> Vec4<T> {
     return Vec4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+export template <std::floating_point T = f32>
+auto operator<<(std::ostream& os, Vec4<T> const& v) -> std::ostream& {
+    std::ios_base::fmtflags old_flags = os.flags();
+    os << std::fixed << std::setprecision(4);
+    os << "[ " << v.x << ", " << v.y << ", " << v.z << ", " << v.w << " ]";
+    os.flags(old_flags);
+    return os;
 }
 
 export template <std::floating_point T = f32>
@@ -240,20 +280,36 @@ public:
 
     // data is stored in column major order. follow the fkn order.
     [[nodiscard]] constexpr static auto projection_matrix() noexcept -> Mat4 {
-        Mat4 m;
-        m.data[0]  =  1;
-        m.data[5]  =  1;
-        m.data[10] =  1;
-        m.data[11] = -1; // idx is 14 if you followed row major
+        Mat4 m{};
+        m.data[0]  = static_cast<T>(1);
+        m.data[5]  =  static_cast<T>(1);
+        m.data[10] =  static_cast<T>(1);
+        m.data[11] = static_cast<T>(-1); // idx is 14 if you followed row major
         return m;
     }
 
     [[nodiscard]] constexpr static auto identity_matrix() noexcept -> Mat4 {
-        Mat4 m;
-        m.data[0]  = 1;
-        m.data[5]  = 1;
-        m.data[10] = 1;
-        m.data[15] = 1;
+        Mat4 m{};
+        m.data[0] = static_cast<T>(1);
+        m.data[5] = static_cast<T>(1);
+        m.data[10] = static_cast<T>(1);
+        m.data[15] = static_cast<T>(1);
+        return m;
+    }
+
+    [[nodiscard]] constexpr static auto translation_matrix(
+        T tx, T ty, T tz
+    ) noexcept -> Mat4 {
+        Mat4 m{};
+        m.data[12] = tx;
+        m.data[13] = ty;
+        m.data[14] = tz;
+
+        m.data[0] = static_cast<T>(1);
+        m.data[5] = static_cast<T>(1);
+        m.data[10] = static_cast<T>(1);
+        m.data[15] = static_cast<T>(1);
+
         return m;
     }
 
@@ -284,6 +340,44 @@ public:
 public:
     std::array<T, 16> data{};
 };
+
+export template <std::floating_point T = f32>
+constexpr auto operator*(Mat4<T> const& data, Mat4<T> const& rhs) -> Mat4<T> {
+    Mat4<T> m{};
+    for (usize col{}; col < 4; ++col) {
+        for (usize row{}; row < 4; ++row) {
+            m.data[col * 4 + row] =
+                data[0 * 4 + row] * rhs.data[col * 4 + 0] +
+                data[1 * 4 + row] * rhs.data[col * 4 + 1] +
+                data[2 * 4 + row] * rhs.data[col * 4 + 2] +
+                data[3 * 4 + row] * rhs.data[col * 4 + 3];
+        }
+    }
+    return m;
+}
+
+export template <std::floating_point T = f32>
+constexpr auto operator<<(std::ostream& os, Mat4<T> const& m) -> std::ostream& {
+    std::ios_base::fmtflags old_flags = os.flags();
+
+    os << std::fixed << std::setprecision(4);
+
+    os << "Mat4([\n";
+    for (usize row{}; row < 4; ++row) {
+        os << "  ";
+        for (usize col{}; col < 4; ++col) {
+            os << std::setw(10) << m.data[col * 4 + row];
+            if (col < 3) {
+                os << ", ";
+            }
+        }
+        os << '\n';
+    }
+    os << ")]";
+
+    os.flags(old_flags);
+    return os;
+}
 
 export using Color = Vec3<f32>;
 export using Point = Vec3<f32>;
