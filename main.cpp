@@ -5,10 +5,12 @@
 #include <ios>
 #include <iostream>
 #include <limits>
+#include <print>
 #include <vector>
 
 import math;
 import types;
+import parser;
 
 struct Framebuffer {
 public:
@@ -156,10 +158,7 @@ auto main(i32 argc, char* argv[]) -> i32 {
         std::cerr << "could not open file!\n";
         return EXIT_FAILURE;
     }
-
-    // Light direction
-    Vec3<f32> light_dir = Vec3<f32>(0.f, 0.f, 1.f).normalized();
-
+/*
     // Worldspace-coordinates
     // These are located with respect to the world's origin
     auto ws_a = Vec4<f32>(-0.5f,  0.5f, -1.0f, 1.f);
@@ -171,7 +170,7 @@ auto main(i32 argc, char* argv[]) -> i32 {
     auto projection_matrix = Mat4<f32>::projection_matrix();
 
     // world space to camera space
-    Mat4<f32> mvp = projection_matrix * view_matrix * model_matrix;
+
     auto edge_ab = ws_b - ws_a;
     auto edge_ac = ws_c - ws_a;
 
@@ -184,7 +183,35 @@ auto main(i32 argc, char* argv[]) -> i32 {
     auto c = to_screen(ws_c, mvp, WIDTH, HEIGHT);
 
     draw_triangle(framebuffer, a, b, c, 255, 0, 0, brightness);
+*/
+    Vec3<f32> light_dir = Vec3<f32>(0.f, 0.f, 1.f).normalized();
 
+    auto model_matrix = Mat4<f32>::translation_matrix(-10.f, 0.f, -75.f) * Mat4<f32>::rotation_y(0.f) * Mat4<f32>::scale(0.5f, 0.5f, 0.5f);
+    auto view_matrix  = Mat4<f32>::identity_matrix();
+    auto projection_matrix = Mat4<f32>::projection_matrix();
+
+    Mat4<f32> mvp = projection_matrix * view_matrix * model_matrix;
+    auto mesh = mesh_loader("/home/lakshya/ws/obj_files/common-3d-test-models-master/data/xyzrgb_dragon.obj");
+
+    for (auto const& face : mesh.faces) {
+        Vec4<f32> ws_a = mesh.vertices[face.a];
+        Vec4<f32> ws_b = mesh.vertices[face.b];
+        Vec4<f32> ws_c = mesh.vertices[face.c];
+
+        auto edge_ab = ws_b - ws_a;
+        auto edge_ac = ws_c - ws_a;
+
+        Vec4<f32> face_normal = edge_ab.cross(edge_ac).normalized();
+        f32 brightness = std::max(0.f, face_normal.dot(light_dir));
+
+        auto a = to_screen(ws_a, mvp, WIDTH, HEIGHT);
+        auto b = to_screen(ws_b, mvp, WIDTH, HEIGHT);
+        auto c = to_screen(ws_c, mvp, WIDTH, HEIGHT);
+
+        draw_triangle(framebuffer, a, b, c, 255, 255, 255, brightness);
+    }
+
+    std::println("Loaded!!");
     framebuffer.save_ppm(outfile);
     outfile.close();
 

@@ -3,6 +3,7 @@ module;
 #include <cstdio>
 #include <fstream>
 #include <ios>
+#include <print>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -15,16 +16,16 @@ export module parser;
 import math;
 import types;
 
-struct Triangle {
+export struct Triangle {
     u32 a, b, c;
 };
 
-struct Mesh {
+export struct Mesh {
     std::vector<Vec4<f32>> vertices;
     std::vector<Triangle> faces;
 };
 
-auto mesh_loader(std::string const& path) -> Mesh {
+export auto mesh_loader(std::string const& path) -> Mesh {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
         throw std::runtime_error("[ERR] Error opening the file!\n");
@@ -39,10 +40,9 @@ auto mesh_loader(std::string const& path) -> Mesh {
     if (!file.read(buffer.data(), size)) {
         throw std::runtime_error("[ERR] Could not read data into the buffer!\n");
     }
-
     Mesh mesh{};
     std::string_view remaining(buffer); // View over the whole buffer
-
+    u32 line = 0;
     while (!remaining.empty()) {
         // Get the end of the line. '\n' is the end of the line
         usize line_end = remaining.find('\n');
@@ -81,7 +81,6 @@ auto mesh_loader(std::string const& path) -> Mesh {
                 sv.remove_prefix(end + 1);
             }
             mesh.vertices.push_back(Vec4<f32>(vertices[0], vertices[1], vertices[2], 1.f));
-
         } else if (sv.starts_with("f ")) {
 
             sv.remove_prefix(2);
@@ -121,6 +120,6 @@ auto mesh_loader(std::string const& path) -> Mesh {
             break;
         }
     }
-
+    std::println("Object Loaded!!");
     return mesh;
 }
