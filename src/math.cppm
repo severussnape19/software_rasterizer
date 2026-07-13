@@ -6,6 +6,7 @@ module;
 #include <iomanip>
 #include <ios>
 #include <ostream>
+#include <experimental/simd>
 
 export module math;
 
@@ -28,6 +29,11 @@ public:
     T x;
     T y;
 };
+
+export template <std::floating_point T>
+constexpr auto deg_to_rad(T degrees) noexcept -> T {
+    return degrees * (std::numbers::pi_v<T> / static_cast<T>(180));
+}
 
 export template <std::floating_point T = f32>
 struct Vec3 {
@@ -313,6 +319,53 @@ public:
         return m;
     }
 
+    [[nodiscard]] constexpr static auto rotation_x(f32 angle) -> Mat4 {
+        Mat4 m{};
+        T sin_theta = std::sin(angle);
+        T cos_theta = std::cos(angle);
+        m.data[0] = static_cast<T>(1);
+        m.data[5] = cos_theta;
+        m.data[6] = sin_theta;
+        m.data[9] = -sin_theta;
+        m.data[10] = cos_theta;
+        m.data[15] = static_cast<T>(1);
+        return m;
+    }
+
+    [[nodiscard]] constexpr static auto rotation_y(f32 angle) -> Mat4 {
+        Mat4 m{};
+        T sin_theta = std::sin(angle);
+        T cos_theta = std::cos(angle);
+        m.data[0] = cos_theta;
+        m.data[2] = -sin_theta;
+        m.data[5] = static_cast<T>(1);
+        m.data[8] = sin_theta;
+        m.data[10] = cos_theta;
+        m.data[15] = static_cast <T>(1);
+        return m;
+    }
+
+    [[nodiscard]] constexpr static auto rotation_z(f32 angle) -> Mat4 {
+        Mat4 m{};
+        T sin_theta = std::sin(angle);
+        T cos_theta = std::cos(angle);
+        m.data[0] = cos_theta;
+        m.data[1] = sin_theta;
+        m.data[4] = -sin_theta;
+        m.data[5] = cos_theta;
+        m.data[10] = static_cast <T>(1);
+        m.data[15] = static_cast <T>(1);
+        return m;
+    }
+
+    [[nodiscard]] constexpr static auto scale(T sx, T sy, T sz) -> Mat4 {
+        Mat4 m{};
+        m.data[0] = sx;
+        m.data[5] = sy;
+        m.data[10] = sz;
+        m.data[15] = static_cast<T>(1);
+        return m;
+    }
     // data is stored in column major order. follow the fkn order.
     constexpr auto operator*(Mat4<T> const& rhs) const -> Mat4 {
         Mat4<T> m{};

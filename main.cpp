@@ -125,20 +125,19 @@ auto draw_triangle(
     }
 }
 
-auto project(Vec4<f32> v, usize width, usize height) -> Vec3<f32> {
-    // Project world space co-ordinates into 2D projected co-ordinates
-    auto ndc_x = Vec4<f32>(v.x, 0.f, 0.f, 0.f);
-    auto ndc_y = Vec4<f32>(0.f, v.y, 0.f, 0.f);
-    auto ndc_z = Vec4<f32>(0.f, 0.f, 1.f, 0.f);
-    auto ndc_w = Vec4<f32>(0.f, 0.f, -1.f, 0.f);
+auto to_screen( Vec4<f32> const& v, Mat4<f32> const& mvp, usize WIDTH, usize HEIGHT ) -> Vec4<f32> {
+    Vec4<f32> clip = mvp * v;
+    // Perspective divide
+    clip /= clip.w;
 
-    auto pixel_scale = Vec3<f32>(
-       ((ndc_x.x + 1) * 0.5) * (width - 1),
-       ((1 - ndc_y.y) * 0.5) * (height - 1), // since the y axis is flipped we use this
-       v.z
+    // Pixel space conversion
+    auto pxl_space_point = Vec4<f32>(
+        ((clip.x + 1.f) * 0.5f) * (static_cast<f32>(WIDTH - 1)),
+        ((1.f - clip.y) * 0.5f) * (static_cast<f32>(HEIGHT - 1)),
+        v.z
     );
 
-    return pixel_scale;
+    return pxl_space_point;
 }
 
 auto main(i32 argc, char* argv[]) -> i32 {
@@ -166,66 +165,22 @@ auto main(i32 argc, char* argv[]) -> i32 {
     auto ws_b = Vec4<f32>( 0.0f, -0.5f, -1.5f, 1.f);
     auto ws_c = Vec4<f32>( 0.5f,  0.5f, -2.0f, 1.f);
 
-    auto model_matrix = Mat4<f32>::translation_matrix(0.5f, 0.f, 0.f);
+    auto model_matrix = Mat4<f32>::identity_matrix();
     auto view_matrix  = Mat4<f32>::identity_matrix();
     auto projection_matrix = Mat4<f32>::projection_matrix();
 
-    std::cout << "World space co-ordinates Before: \n";
-    std::cout << "a: " << ws_a << '\n';
-    std::cout << "b: " << ws_b << '\n';
-    std::cout << "c: " << ws_c << '\n';
-
     // world space to camera space
     Mat4<f32> mvp = projection_matrix * view_matrix * model_matrix;
-    Vec4<f32> clip_a = mvp * ws_a;
-    Vec4<f32> clip_b = mvp * ws_b;
-    Vec4<f32> clip_c = mvp * ws_c;
-
-    std::cout << "World space co-ordinates After (clip co-ords): \n";
-    std::cout << "a: " << clip_a << '\n';
-    std::cout << "b: " << clip_b << '\n';
-    std::cout << "c: " << clip_c << '\n';
-
-    // Perspective divide
-    clip_a /= clip_a.w;
-    clip_b /= clip_b.w;
-    clip_c /= clip_c.w;
-
-    std::cout << "Perspective divide: \n";
-    std::cout << "a: " << clip_a << '\n';
-    std::cout << "b: " << clip_b << '\n';
-    std::cout << "c: " << clip_c << '\n';
-
-    // Pixel space conversion
-    auto a = Vec4<f32>(
-        ((clip_a.x + 1.f) * 0.5f) * (static_cast<f32>(WIDTH - 1)),
-        ((1.f - clip_a.y) * 0.5f) * (static_cast<f32>(HEIGHT - 1)),
-        ws_a.z
-    );
-
-    auto b = Vec4<f32>(
-        ((clip_b.x + 1.f) * 0.5f) * (static_cast<f32>(WIDTH - 1)),
-        ((1.f - clip_b.y) * 0.5f) * (static_cast<f32>(HEIGHT - 1)),
-        ws_b.z
-    );
-
-    auto c = Vec4<f32>(
-        ((clip_c.x + 1.f) * 0.5f) * (static_cast<f32>(WIDTH - 1)),
-        ((1.f - clip_c.y) * 0.5f) * (static_cast<f32>(HEIGHT - 1)),
-        ws_c.z
-    );
-
-    std::cout << "\nScreen space co-ordinates: \n";
-    std::cout << a << '\n';
-    std::cout << b << '\n';
-    std::cout << c << '\n';
-
     auto edge_ab = ws_b - ws_a;
     auto edge_ac = ws_c - ws_a;
 
     Vec4<f32> face_normal = edge_ab.cross(edge_ac).normalized();
 
     f32 brightness = std::max(0.f, face_normal.dot(light_dir));
+
+    auto a = to_screen(ws_a, mvp, WIDTH, HEIGHT);
+    auto b = to_screen(ws_b, mvp, WIDTH, HEIGHT);
+    auto c = to_screen(ws_c, mvp, WIDTH, HEIGHT);
 
     draw_triangle(framebuffer, a, b, c, 255, 0, 0, brightness);
 
