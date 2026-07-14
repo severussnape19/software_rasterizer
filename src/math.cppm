@@ -117,7 +117,11 @@ constexpr auto dot(Vec3<T> const& a, Vec3<T> const& b) noexcept -> T {
 
 export template <std::floating_point T = f32>
 auto operator<<(std::ostream& os, Vec3<T> const& v) -> std::ostream& {
-    return os << "[ " << v.x << ", " << v.y << ", " << v.z << " ]";
+    std::ios_base::fmtflags old_flags = os.flags();
+    os << std::fixed << std::setprecision(4);
+    os << "[ " << v.x << ", " << v.y << ", " << v.z << " ]";
+    os.flags(old_flags);
+    return os;
 }
 
 export template <std::floating_point T = f32>

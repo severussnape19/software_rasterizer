@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cstdlib>
 #include <fstream>
 #include <ios>
@@ -26,7 +27,11 @@ auto main(i32 argc, char* argv[]) -> i32 {
         return EXIT_FAILURE;
     }
 
-    Vec3<f32> light_dir = Vec3<f32>(0.f, 0.f, 1.f).normalized();
+    Vec3<f32> light_dir = Vec3<f32>(0.f, 0.f, 1.f);
+    Vec3<f32> view_dir  = Vec3<f32>(0.f, 0.f, -1.f);
+
+    std::cout << "Light Dir: " << light_dir << '\n';
+    std::cout << "View dir: " << view_dir << '\n';
 
     auto model_matrix = Mat4<f32>::translation_matrix(-10.f, 0.f, -75.f) * Mat4<f32>::rotation_y(0.f) * Mat4<f32>::scale(0.5f, 0.5f, 0.5f);
     auto view_matrix  = Mat4<f32>::identity_matrix();
@@ -35,6 +40,7 @@ auto main(i32 argc, char* argv[]) -> i32 {
     Mat4<f32> mvp = projection_matrix * view_matrix * model_matrix;
     auto mesh = mesh_loader("/home/lakshya/ws/obj_files/common-3d-test-models-master/data/xyzrgb_dragon.obj");
 
+    auto start = std::chrono::high_resolution_clock::now();
     for (auto const& face : mesh.faces) {
         Vec4<f32> ws_a = mesh.vertices[face.a];
         Vec4<f32> ws_b = mesh.vertices[face.b];
@@ -44,6 +50,13 @@ auto main(i32 argc, char* argv[]) -> i32 {
         auto edge_ac = ws_c - ws_a;
 
         Vec4<f32> face_normal = edge_ab.cross(edge_ac).normalized();
+        // Backward culling
+        if (face_normal.dot(light_dir) <= 0) {
+            // If their dot is -ve, surface normal faces into the world
+            // If the dot is +ve, they are in opposite directions so we consider
+            continue;
+        }
+
         f32 brightness = std::max(0.f, face_normal.dot(light_dir));
 
         auto a = to_screen(ws_a, mvp, WIDTH, HEIGHT);
@@ -52,6 +65,9 @@ auto main(i32 argc, char* argv[]) -> i32 {
 
         draw_triangle(framebuffer, a, b, c, 255, 255, 255, brightness);
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::println("Elapsed: {}", elapsed);
 
     std::println("Loaded!!");
     framebuffer.save_ppm(outfile);
