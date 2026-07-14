@@ -13,4 +13,6 @@ target_sources(app
       src/math.cppm
       src/types.cppm
       src/parser.cppm
+      src/display.cppm
+      src/rasterize.cppm
 )
