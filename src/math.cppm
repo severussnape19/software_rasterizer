@@ -323,7 +323,7 @@ public:
         return m;
     }
 
-    [[nodiscard]] constexpr static auto rotation_x(T angle) -> Mat4 {
+    [[nodiscard]] constexpr static auto rotation_x(T angle) noexcept -> Mat4 {
         Mat4 m{};
         T sin_theta = std::sin(angle);
         T cos_theta = std::cos(angle);
@@ -336,7 +336,7 @@ public:
         return m;
     }
 
-    [[nodiscard]] constexpr static auto rotation_y(T angle) -> Mat4 {
+    [[nodiscard]] constexpr static auto rotation_y(T angle) noexcept -> Mat4 {
         Mat4 m{};
         T sin_theta = std::sin(angle);
         T cos_theta = std::cos(angle);
@@ -349,7 +349,7 @@ public:
         return m;
     }
 
-    [[nodiscard]] constexpr static auto rotation_z(T angle) -> Mat4 {
+    [[nodiscard]] constexpr static auto rotation_z(T angle) noexcept -> Mat4 {
         Mat4 m{};
         T sin_theta = std::sin(angle);
         T cos_theta = std::cos(angle);
@@ -371,7 +371,7 @@ public:
         return m;
     }
     // data is stored in column major order. follow the fkn order.
-    constexpr auto operator*(Mat4<T> const& rhs) const -> Mat4 {
+    constexpr auto operator*(Mat4<T> const& rhs) const noexcept -> Mat4 {
         Mat4<T> m{};
         for (usize col{}; col < 4; ++col) {
             for (usize row{}; row < 4; ++row) {
@@ -386,7 +386,7 @@ public:
     }
 
     // data is stored in column major order. follow the fkn order.
-    constexpr auto operator*(Vec4<T> const& rhs) const -> Vec4<T> {
+    constexpr auto operator*(Vec4<T> const& rhs) const noexcept -> Vec4<T> {
         Vec4<T> v{};
         v.x = data[0] * rhs.x + data[4] * rhs.y + data[8] * rhs.z + data[12] * rhs.w;
         v.y = data[1] * rhs.x + data[5] * rhs.y + data[9] * rhs.z + data[13] * rhs.w;
@@ -397,23 +397,6 @@ public:
 public:
     std::array<T, 16> data{};
 };
-
-/*
-export template <std::floating_point T = f32>
-constexpr auto operator*(Mat4<T> const& data, Mat4<T> const& rhs) -> Mat4<T> {
-    Mat4<T> m{};
-    for (usize col{}; col < 4; ++col) {
-        for (usize row{}; row < 4; ++row) {
-            m.data[col * 4 + row] =
-                data[0 * 4 + row] * rhs.data[col * 4 + 0] +
-                data[1 * 4 + row] * rhs.data[col * 4 + 1] +
-                data[2 * 4 + row] * rhs.data[col * 4 + 2] +
-                data[3 * 4 + row] * rhs.data[col * 4 + 3];
-        }
-    }
-    return m;
-}
-*/
 
 export template <std::floating_point T = f32>
 constexpr auto operator<<(std::ostream& os, Mat4<T> const& m) -> std::ostream& {

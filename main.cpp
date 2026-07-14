@@ -16,8 +16,8 @@ auto main(i32 argc, char* argv[]) -> i32 {
         std::cerr << "[ERR] File path where bish?\n";
         return EXIT_FAILURE;
     }
-    constexpr usize WIDTH = 800;
-    constexpr usize HEIGHT = 600;
+    constexpr usize WIDTH = 1920;
+    constexpr usize HEIGHT = 1080;
 
     auto framebuffer = Framebuffer(HEIGHT, WIDTH);
 
@@ -27,11 +27,8 @@ auto main(i32 argc, char* argv[]) -> i32 {
         return EXIT_FAILURE;
     }
 
-    Vec3<f32> light_dir = Vec3<f32>(0.f, 0.f, 1.f);
-    Vec3<f32> view_dir  = Vec3<f32>(0.f, 0.f, -1.f);
-
-    std::cout << "Light Dir: " << light_dir << '\n';
-    std::cout << "View dir: " << view_dir << '\n';
+    Vec4<f32> light_dir = Vec4<f32>(0.f, 0.f, 1.f, 0.f).normalized();
+    Vec4<f32> view_dir  = Vec4<f32>(0.f, 0.f, -1.f, 0.f);
 
     auto model_matrix = Mat4<f32>::translation_matrix(-10.f, 0.f, -75.f) * Mat4<f32>::rotation_y(0.f) * Mat4<f32>::scale(0.5f, 0.5f, 0.5f);
     auto view_matrix  = Mat4<f32>::identity_matrix();
@@ -46,11 +43,12 @@ auto main(i32 argc, char* argv[]) -> i32 {
         Vec4<f32> ws_b = mesh.vertices[face.b];
         Vec4<f32> ws_c = mesh.vertices[face.c];
 
+        // Flat shading / backward culling
         auto edge_ab = ws_b - ws_a;
         auto edge_ac = ws_c - ws_a;
 
         Vec4<f32> face_normal = edge_ab.cross(edge_ac).normalized();
-        // Backward culling
+
         if (face_normal.dot(light_dir) <= 0) {
             // If their dot is -ve, surface normal faces into the world
             // If the dot is +ve, they are in opposite directions so we consider
